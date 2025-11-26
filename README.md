@@ -1,30 +1,72 @@
-# FlashDB ⚡
-A high-performance, thread-safe, in-memory key-value store with LRU eviction and persistence, written in C++.
+# ⚡ FlashDB
+High-performance in-memory key-value store built in **C++17** with **LRU eviction**, **multithreading**, and **snapshot persistence**.
+
+![Language](https://img.shields.io/badge/language-C%2B%2B17-blue.svg)
+![Type](https://img.shields.io/badge/type-In--Memory%20Database-green.svg)
+![License](https://img.shields.io/badge/license-MIT-orange.svg)
+
+FlashDB mimics the core of Redis using a custom architecture, raw POSIX sockets, and fine-grained locking. The project demonstrates systems-level C++ programming, networking, and memory-safe design.
+
+---
+
+## 🏗️ Architecture
+
+FlashDB uses a thread-per-client model and a shared LRU cache protected by mutex locks.
+
+
+---
 
 ## 🚀 Features
-- **In-Memory Storage**: Sub-millisecond read/write latency using `std::unordered_map`.
-- **Thread Safety**: Concurrent client handling using **Fine-Grained Locking** (`std::mutex`).
-- **Memory Management**: Custom **LRU (Least Recently Used)** eviction policy to manage memory under load.
-- **Persistence**: Snapshot-based durability (`SAVE` command) to survive server restarts.
-- **Custom Protocol**: TCP-based communication protocol built on raw Linux sockets.
+
+- **O(1) GET/SET/DEL** using `unordered_map` + doubly-linked list.  
+- **Thread-safe** via fine-grained `std::mutex` locking.  
+- **LRU eviction** when capacity is reached.  
+- **Persistence** using snapshot (`SAVE`) to disk.  
+- **Custom TCP protocol** built on raw Linux sockets.  
+
+---
+
+## 📊 Time Complexity
+
+| Operation | Complexity | Description |
+|----------|------------|-------------|
+| SET      | O(1)       | Insert/update key |
+| GET      | O(1)       | Fetch + refresh LRU |
+| DEL      | O(1)       | Remove key |
+| Evict    | O(1)       | Remove LRU key |
+
+---
 
 ## 🛠️ Tech Stack
-- **Language**: C++ (STL)
-- **Networking**: Linux Sockets (TCP/IP)
-- **Concurrency**: `std::thread`, `std::mutex`, `std::lock_guard`
-- **I/O**: File streams for snapshotting
 
-## 🔧 Architecture
-FlashDB uses a **Client-Server architecture**.
-1. **Networking Layer**: A multi-threaded TCP server listens on Port 8080. Each client connection spawns a detached thread.
-2. **Storage Engine**: Data is stored in a `Hash Map` for O(1) access and a `Doubly Linked List` for O(1) LRU eviction.
-3. **Locking Mechanism**: A global mutex ensures thread safety during `SET` and `DEL` operations, preventing race conditions.
+- **Language:** C++17  
+- **Sockets:** `<sys/socket.h>`, `<netinet/in.h>`  
+- **Concurrency:** `std::thread`, `std::mutex`  
+- **Storage:** `std::fstream`  
 
-## 💻 Usage
+---
 
-### 1. Build
+## 💻 Build & Run
+
+### Build
+```bash
 g++ server.cpp -o flashdb -pthread
+```
 
-### 2. RunBash./flashdb
-### 3. Connect (Client)Use netcat to connect to the server:Bashnc localhost 8080
-### 4. CommandsCommandDescriptionExampleSET <key> <value>Stores a key-value pairSET user:1 ShreyGET <key>Retrieves a valueGET user:1DEL <key>Deletes a keyDEL user:1SAVEPersists data to diskSAVE
+### Run
+```bash
+./flashdb
+```
+
+
+### Connect (Client)
+```bash
+nc localhost 8080
+```
+
+📜 Commands
+Command	Description	Example
+SET <key> <value>	Store or update. Evicts LRU if full.	SET name Shrey
+GET <key>	Retrieve and update LRU position.	GET name
+DEL <key>	Delete key.	DEL name
+SAVE	Write snapshot to flashdb.data.	SAVE
